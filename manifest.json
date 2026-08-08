@@ -1,0 +1,9 @@
+{
+  "name": "Market Mentor",
+  "short_name": "Market Mentor",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#08111f",
+  "theme_color": "#08111f",
+  "description": "Markets, planning and wealth-management learning app"
+}

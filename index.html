@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b1220">
+<title>Market Mentor</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#08111f;
+  --card:#111c2f;
+  --card2:#17243a;
+  --text:#f4f7fb;
+  --muted:#a9b5c7;
+  --accent:#7aa2ff;
+  --good:#74d7a5;
+  --border:#25344f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:linear-gradient(180deg,#08111f 0%,#0d1728 100%);
+  color:var(--text);
+  min-height:100vh;
+}
+.app{max-width:720px;margin:auto;padding:calc(20px + env(safe-area-inset-top)) 18px calc(90px + env(safe-area-inset-bottom))}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+h1{font-size:29px;margin:0}.subtitle{color:var(--muted);font-size:14px;margin-top:4px}
+.streak{background:var(--card2);border:1px solid var(--border);padding:8px 11px;border-radius:14px;font-size:13px}
+.card{background:rgba(17,28,47,.95);border:1px solid var(--border);border-radius:20px;padding:18px;margin:14px 0;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--accent);font-weight:700}
+h2{font-size:22px;margin:7px 0 8px} h3{margin:8px 0}
+p{line-height:1.5;color:#d9e1ec}.muted{color:var(--muted)}
+button,.pill{
+  border:0;border-radius:13px;padding:11px 14px;font-weight:650;font-size:14px;
+}
+button{background:var(--accent);color:#07101d;cursor:pointer}
+.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+.pill{background:var(--card2);color:#dce6f5;border:1px solid var(--border);display:inline-block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.topic{padding:15px;border-radius:16px;background:var(--card2);border:1px solid var(--border);cursor:pointer}
+.topic strong{display:block;margin-bottom:4px}.topic span{font-size:12px;color:var(--muted)}
+.search{width:100%;background:#0b1526;color:white;border:1px solid var(--border);border-radius:15px;padding:14px;font-size:16px;outline:none}
+.lesson{display:none}.lesson.active{display:block}
+.option{display:block;width:100%;text-align:left;margin:8px 0;background:var(--card2);color:white;border:1px solid var(--border)}
+.option.correct{border-color:var(--good);background:#153428}
+.option.wrong{border-color:#ff8f8f;background:#402126}
+.bottom{
+ position:fixed;left:0;right:0;bottom:0;background:rgba(8,17,31,.94);backdrop-filter:blur(16px);
+ border-top:1px solid var(--border);padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+ display:flex;justify-content:center;gap:9px
+}
+.bottom button{background:transparent;color:var(--muted);padding:10px}
+.bottom button.active{color:white;background:var(--card2)}
+.hidden{display:none}
+.small{font-size:13px}
+@media(max-width:430px){.grid{grid-template-columns:1fr 1fr} h1{font-size:27px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div><h1>Market Mentor</h1><div class="subtitle">Markets, planning & wealth management</div></div>
+    <div class="streak">🔥 <span id="streak">1</span> day</div>
+  </div>
+
+  <section id="home">
+    <div class="card">
+      <div class="eyebrow">Today's deep dive</div>
+      <h2 id="dailyTitle">Why is the muni curve so steep?</h2>
+      <p id="dailyDesc">Understand why short municipal yields can be unusually rich versus Treasuries and why municipal issuers tend to issue less short-term debt.</p>
+      <button onclick="openLesson('muni')">Learn this in 5 min</button>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Your curriculum</div>
+      <h3>Built around practical wealth-management questions</h3>
+      <div class="grid">
+        <div class="topic" onclick="filterCategory('Markets')"><strong>📈 Markets</strong><span>Curves, credit, valuation</span></div>
+        <div class="topic" onclick="filterCategory('Estate')"><strong>🏛 Estates</strong><span>Trusts, gifting, basis</span></div>
+        <div class="topic" onclick="filterCategory('Tax')"><strong>🧾 Tax</strong><span>AMT, gains, retirement</span></div>
+        <div class="topic" onclick="filterCategory('Planning')"><strong>🧭 Planning</strong><span>CFP-style decisions</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Quick check</div>
+      <h3>Why does enterprise value add debt?</h3>
+      <button class="option" onclick="answer(this,false)">Debt increases shareholders' equity value</button>
+      <button class="option" onclick="answer(this,true)">An acquirer effectively assumes or repays the debt</button>
+      <button class="option" onclick="answer(this,false)">Debt is always cheaper than equity</button>
+      <div id="quizExplain" class="muted small"></div>
+    </div>
+  </section>
+
+  <section id="library" class="hidden">
+    <input id="search" class="search" placeholder="Search muni curve, GRAT, CDS, PEG..." oninput="renderLibrary()">
+    <div id="libraryList"></div>
+  </section>
+
+  <section id="lessonView" class="hidden">
+    <button class="secondary" onclick="showTab('home')">← Back</button>
+    <div id="lessonContent"></div>
+  </section>
+
+  <section id="quiz" class="hidden">
+    <div class="card">
+      <div class="eyebrow">Quiz mode</div>
+      <h2 id="qTitle"></h2>
+      <div id="qOptions"></div>
+      <div id="qExplain" class="muted"></div>
+      <button id="nextQ" class="hidden" onclick="nextQuestion()">Next question</button>
+    </div>
+  </section>
+</div>
+
+<div class="bottom">
+  <button id="nav-home" class="active" onclick="showTab('home')">Today</button>
+  <button id="nav-library" onclick="showTab('library')">Library</button>
+  <button id="nav-quiz" onclick="startQuiz()">Quiz</button>
+</div>
+
+<script>
+const lessons = [
+{
+ id:"muni", category:"Markets", title:"Why is the municipal yield curve so steep?",
+ summary:"Demand is concentrated at the short end while issuance is concentrated farther out.",
+ body:`<div class="card"><div class="eyebrow">Markets · Fixed Income</div><h2>Why is the muni curve so steep?</h2>
+ <p><b>Core idea:</b> the short end of the municipal curve often has a lot of demand chasing relatively little supply.</p>
+ <p><b>Demand side:</b> high-tax investors, cash-management accounts, separately managed accounts and banks may value short, high-quality tax-exempt paper. That can push short muni yields down relative to comparable Treasuries.</p>
+ <p><b>Supply side:</b> states and municipalities usually borrow to finance long-lived infrastructure. A 20-year school, road or water project naturally fits longer-term financing better than repeatedly refinancing one-year debt.</p>
+ <p><b>Result:</b> scarce short-term supply + strong short-end demand can make short muni yields look very rich, while longer maturities need higher yields to attract enough buyers.</p>
+ <p><b>Remember it:</b> <i>munis finance long assets, but investors love short tax-exempt paper.</i></p></div>`
+},
+{
+ id:"trust", category:"Estate", title:"Revocable trust vs irrevocable trust",
+ summary:"Control and estate inclusion are the main dividing lines.",
+ body:`<div class="card"><div class="eyebrow">Trusts & Estates</div><h2>Revocable vs irrevocable trusts</h2>
+ <p>A <b>revocable trust</b> is primarily a control, probate and incapacity-planning tool. The grantor can generally change it and the assets normally remain part of the grantor's taxable estate.</p>
+ <p>An <b>irrevocable trust</b> generally requires giving up meaningful control. Properly structured, it can shift future appreciation outside the taxable estate and may serve asset-protection or tax-planning goals.</p>
+ <p><b>Exam shortcut:</b> revocable usually means control retained and estate inclusion; irrevocable planning often trades control for potential transfer-tax benefits.</p></div>`
+},
+{
+ id:"cds", category:"Markets", title:"How CDS spreads work",
+ summary:"The spread is the annual premium paid for default protection.",
+ body:`<div class="card"><div class="eyebrow">Markets · Credit</div><h2>Credit default swap spreads</h2>
+ <p>A CDS buyer pays a periodic premium, quoted in basis points per year on the notional amount, to a protection seller.</p>
+ <p>A 150 bp spread on $10 million of notional is roughly $150,000 per year before considering accrual conventions and any upfront payment.</p>
+ <p>Higher perceived default risk or lower expected recovery generally pushes CDS spreads wider.</p></div>`
+},
+{
+ id:"ev", category:"Markets", title:"Why enterprise value adds debt and subtracts cash",
+ summary:"EV approximates the value of the operating business to all capital providers.",
+ body:`<div class="card"><div class="eyebrow">Valuation</div><h2>Enterprise value intuition</h2>
+ <p>Market capitalization values only common equity. An acquirer buying the whole company also takes responsibility for its debt, so debt is added.</p>
+ <p>Cash is subtracted because the buyer effectively receives that cash at closing and can use it to reduce the net purchase cost.</p>
+ <p><b>Think:</b> sticker price of equity + debt you inherit − cash you receive.</p></div>`
+},
+{
+ id:"idgt", category:"Estate", title:"Why an IDGT can move appreciation out of an estate",
+ summary:"Freeze today's value while shifting future growth.",
+ body:`<div class="card"><div class="eyebrow">Trusts & Estates</div><h2>IDGT intuition</h2>
+ <p>An intentionally defective grantor trust can be structured so the grantor remains responsible for income tax while the assets are treated differently for estate-tax purposes.</p>
+ <p>That tax payment can allow trust assets to compound without being reduced by income taxes, while a sale to the trust may freeze the value remaining in the grantor's estate at a note receivable plus interest.</p>
+ <p>The planning value comes from transferring future appreciation above the note's required return.</p></div>`
+},
+{
+ id:"amt", category:"Tax", title:"Why ISOs can trigger AMT",
+ summary:"The bargain element may count for AMT before regular tax recognizes income.",
+ body:`<div class="card"><div class="eyebrow">Tax</div><h2>ISOs and AMT</h2>
+ <p>For regular federal income tax, exercising an incentive stock option generally does not create ordinary income at exercise. For AMT, however, the spread between fair market value and exercise price can be an adjustment.</p>
+ <p>That means someone can owe tax even without selling the stock and receiving cash proceeds.</p></div>`
+},
+{
+ id:"peg", category:"Markets", title:"PEG ratio",
+ summary:"P/E relative to expected earnings growth.",
+ body:`<div class="card"><div class="eyebrow">Equities</div><h2>PEG ratio</h2>
+ <p>The PEG ratio compares a company's P/E multiple with an earnings-growth estimate. Conceptually, it asks how much valuation multiple investors are paying for each unit of expected growth.</p>
+ <p>A lower PEG can indicate cheaper valuation relative to growth, but it is only as reliable as the growth estimate and ignores many differences in risk, margins and capital intensity.</p></div>`
+},
+{
+ id:"hsa", category:"Planning", title:"Why HSAs can be powerful long-term accounts",
+ summary:"Tax deduction, tax-deferred growth and tax-free qualified withdrawals.",
+ body:`<div class="card"><div class="eyebrow">Planning</div><h2>The HSA triple tax advantage</h2>
+ <p>Eligible HSA contributions can receive favorable tax treatment, investment growth is generally tax-deferred, and qualified medical withdrawals are tax-free.</p>
+ <p>That combination makes an HSA potentially valuable as both a current medical account and a long-term planning vehicle.</p></div>`
+}
+];
+
+const questions = [
+ {q:"Why can short-term municipal yields be especially low relative to Treasuries?", a:["Munis have greater federal issuance","Strong demand meets limited short-term muni supply","Municipalities cannot issue long-term bonds"], correct:1, exp:"Short tax-exempt bonds can have heavy investor demand while municipalities often finance long-lived projects with longer maturities."},
+ {q:"What is the best intuition for subtracting cash in enterprise value?", a:["Cash reduces revenue","The buyer receives the cash and it offsets acquisition cost","Cash belongs only to bondholders"], correct:1, exp:"Enterprise value is meant to approximate the net cost of acquiring the operating business."},
+ {q:"A revocable living trust is primarily useful for:", a:["Automatically removing assets from the taxable estate","Probate and incapacity planning while retaining control","Avoiding all income tax"], correct:1, exp:"A revocable trust generally does not remove assets from the grantor's taxable estate."},
+ {q:"A wider CDS spread generally indicates:", a:["Lower perceived credit risk","Higher perceived credit risk","Higher equity dividends"], correct:1, exp:"Protection becomes more expensive when the market perceives greater default or loss risk."},
+ {q:"Why can an ISO exercise create AMT exposure?", a:["The bargain element can be an AMT adjustment","ISOs are taxed as dividends","AMT applies to every option grant"], correct:0, exp:"The exercise spread may enter AMT calculations even though regular tax treatment can defer recognition until disposition."}
+];
+
+function showTab(tab){
+ ["home","library","lessonView","quiz"].forEach(x=>document.getElementById(x).classList.add("hidden"));
+ document.getElementById(tab).classList.remove("hidden");
+ ["home","library","quiz"].forEach(x=>document.getElementById("nav-"+x)?.classList.remove("active"));
+ document.getElementById("nav-"+tab)?.classList.add("active");
+ if(tab==="library") renderLibrary();
+}
+
+function renderLibrary(category){
+ const q=(document.getElementById("search")?.value||"").toLowerCase();
+ let filtered=lessons.filter(x=>(!category||x.category===category) && (x.title.toLowerCase().includes(q)||x.summary.toLowerCase().includes(q)||x.category.toLowerCase().includes(q)));
+ document.getElementById("libraryList").innerHTML=filtered.map(x=>`<div class="card" onclick="openLesson('${x.id}')"><div class="eyebrow">${x.category}</div><h3>${x.title}</h3><div class="muted">${x.summary}</div></div>`).join("") || `<div class="card muted">No matching lesson yet.</div>`;
+}
+function filterCategory(c){showTab("library");renderLibrary(c)}
+function openLesson(id){
+ const l=lessons.find(x=>x.id===id);
+ document.getElementById("lessonContent").innerHTML=l.body;
+ showTab("lessonView");
+}
+function answer(el,correct){
+ [...el.parentNode.querySelectorAll(".option")].forEach(x=>x.disabled=true);
+ el.classList.add(correct?"correct":"wrong");
+ document.getElementById("quizExplain").textContent=correct?"Correct. An acquirer effectively has to deal with the debt, so it belongs in the total enterprise cost.":"Not quite. Think about what a buyer of the entire company actually assumes.";
+}
+let qi=0;
+function startQuiz(){qi=Math.floor(Math.random()*questions.length);showTab("quiz");renderQuestion()}
+function renderQuestion(){
+ const q=questions[qi];
+ document.getElementById("qTitle").textContent=q.q;
+ document.getElementById("qOptions").innerHTML=q.a.map((x,i)=>`<button class="option" onclick="gradeQ(this,${i})">${x}</button>`).join("");
+ document.getElementById("qExplain").textContent="";
+ document.getElementById("nextQ").classList.add("hidden");
+}
+function gradeQ(el,i){
+ const q=questions[qi];
+ [...document.querySelectorAll("#qOptions .option")].forEach((x,j)=>{x.disabled=true;if(j===q.correct)x.classList.add("correct")});
+ if(i!==q.correct)el.classList.add("wrong");
+ document.getElementById("qExplain").textContent=q.exp;
+ document.getElementById("nextQ").classList.remove("hidden");
+}
+function nextQuestion(){qi=(qi+1)%questions.length;renderQuestion()}
+
+const last=localStorage.getItem("marketMentorLast");
+const today=new Date().toDateString();
+let streak=Number(localStorage.getItem("marketMentorStreak")||0);
+if(last!==today){streak=Math.max(1,streak+1);localStorage.setItem("marketMentorLast",today);localStorage.setItem("marketMentorStreak",streak)}
+document.getElementById("streak").textContent=streak;
+</script>
+</body>
+</html>
